@@ -9,6 +9,7 @@ import {
   Box,
   CloseButton
 } from '@chakra-ui/react';
+import BASE_URL from '../services';
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({
@@ -46,7 +47,7 @@ const LoginForm = () => {
     setSuccess('');
 
     try {
-      const response = await fetch('http://localhost:5001/', {
+      const response = await fetch(`${BASE_URL}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,7 +66,7 @@ const LoginForm = () => {
           
           // Fetch user data to get the first name
           const token = localStorage.getItem('authToken'); // Retrieve token from localStorage
-          const userDataResponse = await fetch('http://localhost:5001/api/home', {
+          const userDataResponse = await fetch(`${BASE_URL}/api/home`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',

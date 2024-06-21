@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import '../Styles/pages.css';
 import signUpImg from "/Images/reg.jpg";
-
+import BASE_URL from '../services';
 const RegisterForm = () => {
   const [formData, setFormData] = useState({
     firstName: '',
@@ -23,7 +23,7 @@ const RegisterForm = () => {
     setError('');
 
     try {
-      const response = await fetch(`http://localhost:5001/api/register`, { // Ensure this path is correct
+      const response = await fetch(`${BASE_URL}/api/register`, { // Ensure this path is correct
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

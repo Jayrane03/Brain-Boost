@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../Styles/complete_profile.css';
 import { Radio, RadioGroup, HStack, Alert, AlertIcon, AlertTitle, AlertDescription, Box, CloseButton } from '@chakra-ui/react';
-
+import BASE_URL from '../services';
 function Profile() {
   const [userData, setUserData] = useState({
     firstName: '',
@@ -23,7 +23,7 @@ function Profile() {
         return;
       }
       try {
-        const response = await fetch('http://localhost:5001/profile', {
+        const response = await fetch(`${BASE_URL}/profile`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -116,7 +116,7 @@ function Profile() {
     formData.append('profilePhoto', userData.profilePhoto);
 
     try {
-      const response = await fetch('http://localhost:5001/profile', {
+      const response = await fetch(`${BASE_URL}/profile`, {
         method: 'POST',
         body: formData,
         headers: {
