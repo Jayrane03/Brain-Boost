@@ -1,0 +1,16 @@
+# Set the default behavior to automatically normalize line endings.
+* text=auto
+
+# Define how files should be normalized and converted.
+# These settings are useful if you have specific file types
+# that should always be LF or CRLF.
+
+# Example for always LF
+*.sh text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+
+# Example for always CRLF
+*.bat text eol=crlf
