@@ -12,16 +12,16 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // Enable CORS
-// app.use(cors({
-//   origin: 'http://localhost:5173',
-//   methods: ['GET', 'POST', 'PUT'], 
-//   allowedHeaders: ['Content-Type', 'Authorization'],
-// }));
 app.use(cors({
-  origin: 'https://boostmybrain.netlify.app/',
+  origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT'], 
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+// app.use(cors({
+//   origin: 'https://boostmybrain.netlify.app/',
+//   methods: ['GET', 'POST', 'PUT'], 
+//   allowedHeaders: ['Content-Type', 'Authorization'],
+// }));
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
