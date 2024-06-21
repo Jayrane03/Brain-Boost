@@ -1,10 +1,9 @@
 [build]
   base = "frontend" # Assuming your frontend code is in the "frontend" directory
-  command = "npm run build"
+  command = "vite build"
   publish = "frontend/build" # Assuming the build output is in "frontend/build"
 
-[context.production.environment]
-  NODE_ENV = "production"
+
 
 [[redirects]]
   from = "/*"
