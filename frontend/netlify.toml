@@ -1,4 +1,12 @@
 [build]
+  base = "frontend" # Assuming your frontend code is in the "frontend" directory
   command = "npm run build"
-  publish = "build"
-  base = "education_page"
+  publish = "frontend/build" # Assuming the build output is in "frontend/build"
+
+[context.production.environment]
+  NODE_ENV = "production"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
