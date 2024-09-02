@@ -13,7 +13,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5001', // Change to your backend server's URL
+        // target: 'http://localhost:5001', // Change to your backend server's URL
+        target: 'https://brain-boost.onrender.com', // Change to your backend server's URL
         changeOrigin: true,
         secure: false,
       },
