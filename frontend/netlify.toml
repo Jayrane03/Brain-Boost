@@ -10,4 +10,5 @@
 
 [build.environment]
   NODE_ENV = "production"
+  RUBY_VERSION = "2.7.2"
   BASE_URL = "https://brain-boost.onrender.com"
