@@ -1,7 +1,7 @@
 [build]
-  base = "frontend" # Assuming your frontend code is in the "frontend" directory
+  base = "frontend"
   command = "vite build"
-  publish = "frontend/build" # Assuming the build output is in "frontend/build"
+  publish = "frontend/dist" # Ensure this matches Vite's output directory
 
 [[redirects]]
   from = "/*"
@@ -10,5 +10,4 @@
 
 [build.environment]
   NODE_ENV = "production"
-  RUBY_VERSION = 2.7.2
   BASE_URL = "https://brain-boost.onrender.com"
