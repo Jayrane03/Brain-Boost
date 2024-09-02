@@ -1,6 +1,6 @@
 [build]
   base = "frontend"
-  command = "vite build"
+  command = "npx vite build"
   publish = "frontend/dist" # Ensure this matches Vite's output directory
 
 [[redirects]]
