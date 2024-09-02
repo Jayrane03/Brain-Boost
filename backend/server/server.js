@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const profileRoutes = require('../routes/profile-routes');
 const bodyParser = require('body-parser');
@@ -7,6 +8,7 @@ const connectDB = require('../utils/db')
 const app = express();
 const cors = require('cors');
 const PORT = 5001;
+
 // Middleware
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
