@@ -2,27 +2,29 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  
   build: {
     outDir: 'build',
     rollupOptions: {
-      external: ['/public/Images/contact_form.jpg']
-    } // Change 'build' to the desired output directory name
+      external: ['/public/Images/contact_form.jpg'],
+    },
   },
+  
   server: {
     proxy: {
       '/api': {
-        // target: 'http://localhost:5001', // Change to your backend server's URL
-        target: 'https://brain-boost.onrender.com', // Change to your backend server's URL
+        // target: 'http://localhost:5001', // Change to your backend server's URL if in local
+        target: 'https://brain-boost.onrender.com', // Backend server URL for production
         changeOrigin: true,
         secure: false,
       },
     },
   },
-  
 
-
-})
-// vite.config.js
-
+  // Define process.env.NODE_ENV depending on the build mode
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(mode === 'production' ? 'production' : 'development'),
+  },
+}));
