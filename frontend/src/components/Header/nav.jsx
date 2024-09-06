@@ -185,7 +185,7 @@ function CustomNav() {
                     <Avatar
                       name={userData.firstName}
                       onClick={onOpen}
-                      src={`http://localhost:5001/${userData.profilePhoto}`}
+                      src={`https://brain-boost.onrender.com/${userData.profilePhoto}`}
                       alt="Profile"
                       style={{ cursor: "pointer", border: "3px solid #7eec6d" }}
                     />
