@@ -40,6 +40,9 @@ const port = process.env.PORT || 5001;
 console.log('MONGODB_URI:', process.env.MONGODB_URI);
 console.log('PORT:', process.env.PORT);
 
+app.use(express.static('public'));
+
+
 
 connectDB().then(() => {
   app.listen(port, () => {
