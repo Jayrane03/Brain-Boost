@@ -11,6 +11,7 @@ import CourseDetail from './components/Course/courseDeatils';
 
 function App() {
   const [user, setUser] = useState(null);
+  
   useEffect(() => {
     const scrollReveal = ScrollReveal({
       origin: "left",

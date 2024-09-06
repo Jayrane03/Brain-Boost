@@ -6,7 +6,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [react()],
   
   build: {
-    outDir: 'build',
+    outDir: 'dist',
     rollupOptions: {
       external: ['/public/Images/contact_form.jpg'],
     },
