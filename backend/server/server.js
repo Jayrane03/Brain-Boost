@@ -20,12 +20,14 @@ app.use(bodyParser.json());
 //   ? process.env.CORS_ALLOWED_ORIGINS.split(',')
 //   : [];
 
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+  ? ['https://brain-boost-1.onrender.com'] 
+  : ['http://localhost:5173'];
+
 app.use(cors({
-  // origin: allowedOrigins,
-  // origin: 'http://localhost:5173,
-  origin: 'https://brain-boost-1.onrender.com',
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 // Serve uploaded files statically

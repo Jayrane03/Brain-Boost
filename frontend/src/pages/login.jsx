@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import loginImg from '/Images/login_edu.jpg';
+import loginImg from '/Images/login.png';
 import '../Styles/pages.css';
 import {
   Alert,
@@ -19,7 +19,12 @@ const LoginForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [userName, setUserName] = useState('');
+const [userData, setUserData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+  });
+
 
   useEffect(() => {
     if (error) {
@@ -45,7 +50,7 @@ const LoginForm = () => {
     setLoading(true);
     setError('');
     setSuccess('');
-
+  
     try {
       const response = await fetch(`${BASE_URL}`, {
         method: 'POST',
@@ -57,38 +62,43 @@ const LoginForm = () => {
           password: formData.password,
         }),
       });
-
+  
       const data = await response.json();
-
+  
       if (response.ok) {
         if (data.token) {
           localStorage.setItem('authToken', data.token); // Store token in localStorage
-          
-          // Fetch user data to get the first name
+  
+          // Fetch user data to get the first name and last login info
           const token = localStorage.getItem('authToken'); // Retrieve token from localStorage
-          const userDataResponse = await fetch(`${BASE_URL}/api/home`, {
+          const userDataResponse = await fetch(`${BASE_URL}/profile`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`, // Include token in headers
             },
           });
-
+  
           const userData = await userDataResponse.json();
-        
           if (userDataResponse.ok) {
-            //  / / Assuming the first name field is named 'firstName'
-            
-            console.log(userData)
-            const firstName  = userData.user.firstName;
-            setUserName(firstName); // Set the user's first name
-           
-            
-            console.log('Redirecting to /home');
-             setTimeout((
-              setSuccess(`Welcome, ${firstName}! Redirecting...`),
-              window.location.href = '/home'
-             ), 2000)
+            console.log(userData);
+  
+            setUserData({
+              firstName: userData.firstName || "User",
+              lastName: userData.lastName || ""
+            });
+  
+            // Show custom success message for first login or returning user
+            if (data.user.isFirstTime) {
+              setSuccess(`Welcome back, ${userData.firstName} ${userData.lastName}! Redirecting...`);
+            } else {
+              setSuccess(`Welcome , ${userData.firstName} ${userData.lastName}! Redirecting...`);
+            }
+  
+            // Redirect after 2 seconds
+            setTimeout(() => {
+              window.location.href = '/home';
+            }, 1500); // 2000ms = 2 seconds
           } else {
             console.error('Failed to fetch user data');
             setError('Failed to fetch user data');
@@ -106,12 +116,13 @@ const LoginForm = () => {
       setLoading(false);
     }
   };
+  
 
   return (
     <div className="login">
       <div className="login-form-container">
         <div className="image">
-          <img src={loginImg} alt="Background" />
+          <img className='formImg' src={loginImg} alt="Background" />
         </div>
         <div className="form-container">
           <h2>Login</h2>
@@ -129,7 +140,7 @@ const LoginForm = () => {
             <Alert status="success" mb={4}>
               <AlertIcon />
               <Box flex="1">
-                <AlertTitle>Welcome, {userName}!</AlertTitle>
+                <AlertTitle>Welcome, {userData.firstName} {userData.lastName}!</AlertTitle>
                 <AlertDescription>{success}</AlertDescription>
               </Box>
               <CloseButton position="absolute" right="8px" top="8px" onClick={() => setSuccess('')} />

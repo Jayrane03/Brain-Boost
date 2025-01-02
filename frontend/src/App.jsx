@@ -1,12 +1,13 @@
 import React, { useEffect ,useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Updated import
 import Home from "./components/home";
-
+import ScrollToHash from './components/ScrooltoHash';
 import ScrollReveal from 'scrollreveal'; 
 import LoginPage from "./pages/login";
 import RegisterForm from './pages/register';
 import Profile from './pages/complete_profile';
 import "../src/Styles/index.css";
+import CodeRoom from './components/Editor/CodeRoom';
 import CourseDetail from './components/Course/courseDeatils';
 
 function App() {
@@ -38,7 +39,7 @@ function App() {
 
   return (
     <Router>
-     
+     <ScrollToHash></ScrollToHash>
       <Routes>
         <Route path="/home" element={<Home />} />
       
@@ -46,6 +47,7 @@ function App() {
         <Route path="/profile" element={<Profile {...user} />} />
         <Route path="/register" element={<RegisterForm />} />
         <Route path="/course/:id" element={<CourseDetail/>}  />
+        <Route path="/room" element={<CodeRoom/>}  />
       </Routes>
     
     </Router>

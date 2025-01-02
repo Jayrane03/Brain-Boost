@@ -149,7 +149,7 @@ function Profile() {
             type="text"
             id="firstName"
             name="firstName"
-            value={userData.firstName}
+            value={userData.firstName || " "}
             onChange={handleChange}
             required
           />
@@ -160,7 +160,7 @@ function Profile() {
             type="text"
             id="lastName"
             name="lastName"
-            value={userData.lastName}
+            value={userData.lastName || " "}
             onChange={handleChange}
             required
           />
@@ -171,7 +171,7 @@ function Profile() {
             type="email"
             id="email"
             name="email"
-            value={userData.email}
+            value={userData.email || " "}
             onChange={handleChange}
             required
           />
@@ -182,7 +182,7 @@ function Profile() {
             type="tel"
             id="phone"
             name="phone"
-            value={userData.phone}
+            value={userData.phone || " "}
             onChange={handleChange}
             required
           />
@@ -193,7 +193,7 @@ function Profile() {
             <input
               type="text"
               id="skills"
-              value={newSkill}
+              value={newSkill || " "}
               onChange={handleSkillChange}
             />
             <button type="button" onClick={addSkill}>Add Skill</button>

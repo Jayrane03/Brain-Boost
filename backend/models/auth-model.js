@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
     type: String, 
     required: function() { return this.isModified('password'); } 
   },
-  phone: { type: Number },
+  phone: { type: String },  // Changed to String to handle leading zeros
   profilePhoto: { type: String },
   skills: [{ type: String }],
   gender: { type: String },
@@ -25,7 +25,8 @@ const userSchema = new mongoose.Schema({
     courseName: { type: String, required: true },
     coursePrice: { type: Number, required: true }
   }],
-  messages: [messageSchema] // New field for messages
+  messages: { type: [messageSchema], default: [] }, // Default to empty array
+  lastLogin: { type: Date, default: Date.now }
 });
 
 const UserModel = mongoose.model('Students', userSchema);

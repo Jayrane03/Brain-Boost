@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import ContactImg from "/Images/contact_form.jpg";
+import ContactImg from "/Images/contact.png";
 import BASE_URL from '../../services';
 const ContactForm = () => {
   const [formData, setFormData] = useState({
@@ -66,7 +66,7 @@ const ContactForm = () => {
         <h2 className='heading_text'>Contact Us</h2>
         <div className="cont-page">
           <div className="contact-image">
-            <img src={ContactImg} alt="Contact Form" />
+            <img className='formImg' src={ContactImg} alt="Contact Form" />
           </div>
           <form action='/message' method='POST' encType='multipart/form-data' className='cont-form' onSubmit={handleSubmit}>
             {error && <div className="error">{error}</div>}

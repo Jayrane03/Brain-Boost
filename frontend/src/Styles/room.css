@@ -1,0 +1,9 @@
+#room_form{
+    background-color: #121212;
+    padding: 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 150px;
+}

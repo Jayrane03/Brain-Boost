@@ -41,7 +41,6 @@ exports.registerUser = async (req, res) => {
 };
 
 
-
 exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -51,12 +50,16 @@ exports.loginUser = async (req, res) => {
     if (!user) {
       return res.status(400).json({ status: "Error", message: "User not found" });
     }
-     console.log(user)
+
     // Verify the password
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return res.status(400).json({ status: "Error", message: "Invalid password" });
     }
+
+    // Update lastLogin field to the current time
+    user.lastLogin = new Date(); // Set the current date and time
+    await user.save(); // Save the updated user document
 
     // Generate JWT token
     const token = jwt.sign({
@@ -65,7 +68,7 @@ exports.loginUser = async (req, res) => {
       firstName: user.firstName,
       lastName: user.lastName
     }, 'secret23', { expiresIn: '2h' });
-  
+
     // Return user data along with the token
     res.json({
       status: "OK",
@@ -77,35 +80,33 @@ exports.loginUser = async (req, res) => {
     res.status(500).json({ status: "Error", message: "Internal Server Error" });
   }
 };
-exports.getHome = async (req, res) => {
-  try {
-    // Fetch user data from the request
-    const {email} = req.body;
-    // console.log('User from request:', req.body);
 
-    // Fetch additional data from your database
-    const userData = await UserModel.findOne(email);
-    // console.log('User data from database:', userData.firstName);
+;exports.getHome = async (req, res) => {
+  try {
+    // Extract email from the authenticated user's data (e.g., req.user)
+    const { email } = req.user;
+
+    // Ensure the email is present
+    if (!email) {
+      return res.status(400).json({ message: 'User email is required' });
+    }
+
+    // Fetch the user's data from the database
+    const userData = await UserModel.findOne({ email }).select('-password');
 
     if (!userData) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Construct the response object
-    // const responseData = {
-    //   user: {
-    //     firstName: userData.firstName,
-    //     // Add any other user data you want to include
-    //   },
-    //   // Add any other data you want to include
-    // };
-
-    // Send the response
-    res.status(201).json({
-      status: "OK",
-      message: "User Login successfully",
-      user: { email: userData.email, firstName: userData.firstName, lastName: userData.lastName },
-      
+    // Send the response with the user's name
+    res.status(200).json({
+      status: 'OK',
+      message: 'User data fetched successfully',
+      user: {
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+      },
     });
   } catch (error) {
     console.error('Error fetching home data:', error);

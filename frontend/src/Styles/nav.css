@@ -7,6 +7,7 @@ img {
     background-color: #25242A;
     display: flex;
     height: 10vh;
+    width: 100vw;
     justify-content: space-between; /* Align items at start and end */
     align-items: center; /* Center items vertically */
 }
@@ -16,6 +17,7 @@ img {
 .nav-link,
 .nav-brand
 {
+  cursor: pointer !important;
     letter-spacing: 1.2px;
 }
 

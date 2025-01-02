@@ -22,7 +22,7 @@ font-style: normal;
     gap: 10px;
     align-items: center;
     height: 95vh;
-    width: 70vw; /* Adjusted width */
+    width: 60vw; /* Adjusted width */
     padding: 0 50px;
     box-shadow: 0 0 10px #7eec6d; /* Added box shadow */
   }
@@ -47,17 +47,17 @@ font-style: normal;
     justify-content: center;
     align-items: center;
     flex: 1;
-    height: 95%;
-    width: 100%; /* Adjusted width to fit container */
-    padding: 20px;
+    height: 87%;
+    /* width: 50%;  */
+    padding:20px;
     background-color: #f5f5f5;
     border-radius: 10px;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); /* Added box shadow */
   }
   .form-container form{
      display: flex;
-     width: 30vw;
-     gap: 10px;
+     width: 25vw;
+     gap: 5px;
      flex-direction: column;
      justify-content:center ;
      align-items: center;
@@ -79,11 +79,11 @@ font-style: normal;
   }
   
   input {
-    width:26vw !important;
-    padding: 10px;
+    width:22vw !important;
+    padding: 5px;
     outline: none;
     margin-left: 0px !important;
-    font-size: 16px;
+    font-size: 12px;
     border: 2px solid #fff;
     color: #093b01;
     border-radius: 5px;
@@ -92,7 +92,7 @@ font-style: normal;
     border: 2px solid #093b01;
  }
   button[type="submit"] {
-    width:28vw !important;
+    width:20vw !important;
     padding: 10px;
     background-color: #093b01;
     color: #fff;
@@ -141,10 +141,13 @@ font-style: normal;
     justify-content: center;
     gap: 10px;
     align-items: center;
-    height: 85vh;
-    width: 70vw; /* Adjusted width */
+    height: 75vh;
+    width: 60vw;  /* Adjusted width */
     padding: 0 50px;
     box-shadow: 0 0 10px #7eec6d 
+  }
+  .formImg{
+    background-color: #fff;
   }
 
   .form-container {

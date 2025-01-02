@@ -173,10 +173,11 @@ function CustomNav() {
             <Nav
               className={`me-auto navLink-div ${expanded ? "expanded" : ""}`}
             >
-              <Nav.Link href="#about">About</Nav.Link>
-              <Nav.Link href="#features">Features</Nav.Link>
-              <Nav.Link href="#course">Courses</Nav.Link>
-              <Nav.Link href="#contact">Contact</Nav.Link>
+              <Nav.Link href="/home#about">About</Nav.Link>
+              <Nav.Link href="/home#features">Features</Nav.Link>
+              <Nav.Link href="/home#course">Courses</Nav.Link>
+              <Nav.Link href="/home#contact">Contact</Nav.Link>
+              <Nav.Link href="/room">Code Room</Nav.Link>
             </Nav>
             <Nav>
               {userData.profilePhoto && (
@@ -185,7 +186,7 @@ function CustomNav() {
                     <Avatar
                       name={userData.firstName}
                       onClick={onOpen}
-                      src={`https://brain-boost.onrender.com/${userData.profilePhoto}`}
+                      src={`${BASE_URL}/${userData.profilePhoto}`}
                       alt="Profile"
                       style={{ cursor: "pointer", border: "3px solid #7eec6d" }}
                     />
