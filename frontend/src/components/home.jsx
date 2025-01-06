@@ -16,6 +16,7 @@ const [userData, setUserData] = useState({
     lastName: "",
     email: "",
   });
+const username = userData.firstName + userData.lastName;
 
 
   useEffect(() => {

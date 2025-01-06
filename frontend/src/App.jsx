@@ -7,9 +7,10 @@ import LoginPage from "./pages/login";
 import RegisterForm from './pages/register';
 import Profile from './pages/complete_profile';
 import "../src/Styles/index.css";
-import CodeRoom from './components/Editor/CodeRoom';
+// import CodeRoom from './components/Editor/CodeRoom.jsx';
 import CourseDetail from './components/Course/courseDeatils';
-
+import EditorPage from "./components/Editor/EditorPage.jsx";
+import CodeRoom from './components/Editor/codeRoom.jsx';
 function App() {
   const [user, setUser] = useState(null);
   
@@ -47,6 +48,7 @@ function App() {
         <Route path="/profile" element={<Profile {...user} />} />
         <Route path="/register" element={<RegisterForm />} />
         <Route path="/course/:id" element={<CourseDetail/>}  />
+        <Route path="/editor_page/:roomId" element={<EditorPage/>}  />
         <Route path="/room" element={<CodeRoom/>}  />
       </Routes>
     

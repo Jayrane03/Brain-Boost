@@ -1,9 +1,38 @@
+.code_room{
+    background-color: blue !important;
+    height: 100vh !important;
+    width: 100vw !important;
+}
 #room_form{
     background-color: #121212;
     padding: 50px;
+    border-radius: 20px !important;
     display: flex;
     flex-direction: column;
+    letter-spacing: 0.5px;
     justify-content: center;
     align-items: center;
     margin: 150px;
+    -webkit-border-radius: 20px !important;
+    -moz-border-radius: 20px !important;
+    -ms-border-radius: 20px !important;
+    -o-border-radius: 20px !important;
+}
+#room_formm input:focus-visible{
+    color: #093b01;
+    
+}
+.room_btn button{
+    letter-spacing: 0.5px;
+    background-color: #7eec6d;
+    color: #121212;
+    font-weight: 600;
+    margin: 10px;
+    cursor: pointer;
+    width: 200px !important;
+}
+.room_btn button:hover{
+    background-color: #6ed25e;
+    color: #121212;
+    
 }

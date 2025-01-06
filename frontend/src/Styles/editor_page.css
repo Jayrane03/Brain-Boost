@@ -1,0 +1,30 @@
+.editor-page-container {
+    display: flex;
+    height: 100vh;
+  }
+  .editor_buttons{
+    margin-bottom: 10px;
+    
+  }
+
+  .dashboard {
+    width: 20vw;
+    position: absolute;
+    left: 0;
+    color: aliceblue;
+    height: 100vh;
+    background-color: #1C1B1E;
+    padding: 20px;
+  
+  }
+  .dashboard h2{
+    color: aliceblue;
+  }
+  
+  .success_alert{
+    border-radius: 10px;
+    height: 200px;
+    margin: 100px ;
+    
+  }
+ 
