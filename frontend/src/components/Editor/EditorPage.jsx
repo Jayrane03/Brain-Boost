@@ -14,8 +14,13 @@ import {
   Box,
   CloseButton,
   Button,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
 } from "@chakra-ui/react";
-import BASE_URL from "../../services";
+import ChatRoom from "../Editor/chatRoom";
 
 const EditorPage = () => {
   const { roomId } = useParams(); // Extract roomId from URL
@@ -25,6 +30,7 @@ const EditorPage = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const socketRef = useRef(null);
+  // const [messages, setMessages] = useState([]);
   const username = location.state?.username || "Guest"; // Extract username from state or use "Guest"
 
   // Initialize socket connection
@@ -59,6 +65,10 @@ const EditorPage = () => {
           setSuccess(`${leftUser} left the room.`);
           setTimeout(() => setSuccess(null), 2000); // Clear success message after 2 seconds
         });
+          //  // Listen for incoming messages and update the state
+          //  socketRef.current.on("receiveMessage", (newMessage) => {
+          //   setMessages((prevMessages) => [...prevMessages, newMessage]);
+          // });
 
         setLoading(false);
       } catch (err) {
@@ -80,23 +90,18 @@ const EditorPage = () => {
     };
   }, [roomId, username]);
 
-  // Optional: Also add a global useEffect for error/success
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => setError(null), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
-
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => setSuccess(null), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [success]);
-
   const exitRoom = () => {
     window.location.href = "/room";
+  };
+
+  const copyRoomId = async () => {
+    try {
+      await navigator.clipboard.writeText(roomId);
+      setSuccess("Room Id copied successfully.");
+    } catch (err) {
+      console.error("Failed to copy Room ID:", err);
+      setError("Error copying in Room Id.");
+    }
   };
 
   return (
@@ -104,64 +109,62 @@ const EditorPage = () => {
       {success && (
         <div className="success_alert">
           <Alert status="success" mb={4}>
-            <AlertIcon />
-            <Box flex="1">
-              <AlertTitle>Success!</AlertTitle>
-              <AlertDescription>{success}</AlertDescription>
-            </Box>
-            <CloseButton
-              position="absolute"
-              right="8px"
-              top="8px"
-              onClick={() => setSuccess("")}
-            />
-          </Alert>
+          <AlertIcon />
+          <Box flex="1">
+            <AlertTitle>Success!</AlertTitle>
+            <AlertDescription>{success}</AlertDescription>
+          </Box>
+          <CloseButton
+            position="absolute"
+            right="8px"
+            top="8px"
+            onClick={() => setSuccess("")}
+          />
+        </Alert>
         </div>
       )}
-      {/* Alerts for error and success */}
       {error && (
-        <div className="success_alert">
-          <Alert status="error" mb={4}>
-            <AlertIcon />
-            <Box flex="1">
-              <AlertTitle>Error!</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Box>
-            <CloseButton
-              position="absolute"
-              right="8px"
-              top="8px"
-              onClick={() => setError("")}
-            />
-          </Alert>
-        </div>
+       <div className="success_alert">
+         <Alert status="error" mb={4}>
+          <AlertIcon />
+          <Box flex="1">
+            <AlertTitle>Error!</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Box>
+          <CloseButton
+            position="absolute"
+            right="8px"
+            top="8px"
+            onClick={() => setError("")}
+          />
+        </Alert>
+       </div>
       )}
 
-      {/* Left Side: User Dashboard */}
       <div className="dashboard">
         <h2>Users in Room</h2>
         <div>
           {users.map((user) => (
             <Stack key={user.socketId} spacing={4} marginBottom={4}>
               <HStack spacing={4} align="center">
-                <Avatar name={user.username} size="lg" />
+                <Avatar name={user.username} size="md" />
                 <Stack spacing={0}>
-                  <Text fontWeight="medium">{user.username}</Text>
+                  <Text fontWeight="medium" fontSize="15px" marginTop={"20px"}>{user.username}</Text>
                 </Stack>
               </HStack>
             </Stack>
           ))}
         </div>
 
-        <div className="editor-buttons d-flex justify-content-center position-absolute bottom-0 w-75">
+        <div className="editor-buttons d-flex justify-content-center position-absolute bottom-0">
           <Button
             colorScheme="green"
             isLoading={loading}
             loadingText="Joining..."
             className="m-1"
-            disabled
+            onClick={copyRoomId}
           >
-            Join
+            Copy Room Id
           </Button>
           <Button colorScheme="red" className="m-1" onClick={exitRoom}>
             Exit Room
@@ -169,10 +172,30 @@ const EditorPage = () => {
         </div>
       </div>
 
-      {/* Right Side: Code Editor */}
-      <div className="editor">
-        <h2>Code Editor</h2>
-        {/* Add your code editor component here */}
+      {/* Tabs for content */}
+      <div className="tabs-container">
+      <Tabs variant="teal" >
+
+          <TabList color={"white"} >
+            <Tab>Members</Tab>
+            <Tab>Chat</Tab>
+          </TabList>
+          <TabPanels>
+            <TabPanel color={"white"}>
+              <h2>Members</h2>
+              <p>Manage your team members.</p>
+            </TabPanel>
+
+            <TabPanel>
+              <h2 className="text-light">Chat</h2>
+              <ChatRoom
+                socketRef={socketRef}
+                roomId={roomId}
+                username={username}
+              />
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
       </div>
     </div>
   );
