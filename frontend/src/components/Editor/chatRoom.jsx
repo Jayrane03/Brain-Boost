@@ -8,6 +8,7 @@ import {
   Button,
   Box,
 } from "@chakra-ui/react";
+import { v4 as uuidv4 } from "uuid";
 
 const ChatRoom = ({ socketRef, roomId, username }) => {
   const [messages, setMessages] = useState([]); // Messages array
@@ -15,44 +16,49 @@ const ChatRoom = ({ socketRef, roomId, username }) => {
 
   // Fetch chat history and listen for new messages
   useEffect(() => {
-    if (socketRef.current) {
-      // Join the room on component mount or reconnect
+    if (!socketRef.current) return; // Ensure socketRef is defined
+
+    // Wait for the socket connection to establish
+    socketRef.current.on("connect", () => {
+      console.log("Socket connected");
+
+      // Join the room on component mount
       socketRef.current.emit("joinRoom", { roomId, username });
-  
+
       // Listen for previous messages (chat history)
       socketRef.current.on("previousMessages", (chatHistory) => {
         console.log("Chat history received:", chatHistory);
-        setMessages(chatHistory || []); // Update state with previous messages
+        setMessages(chatHistory || []);
       });
-  
+
       // Listen for new messages
       socketRef.current.on("receiveMessage", (newMessage) => {
         console.log("Message received:", newMessage);
-        setMessages((prevMessages) => [...prevMessages, newMessage]); // Add new message to the list
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
       });
-  
-      // Cleanup listeners on unmount
-      return () => {
-        if (socketRef.current) {
-          socketRef.current.off("previousMessages");
-          socketRef.current.off("receiveMessage");
-        }
-      };
-    }
+    });
+
+    // Cleanup listeners on unmount
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off("connect");
+        socketRef.current.off("previousMessages");
+        socketRef.current.off("receiveMessage");
+      }
+    };
   }, [socketRef, roomId, username]);
-  
 
   // Handle sending a message
   const sendMessage = () => {
     if (message.trim()) {
-      const newMessage = { username, text: message }; // Create a message object
+      const newMessage = { id: uuidv4(), username, text: message }; // Add a unique ID
 
       // Emit the message to the server
       socketRef.current.emit("sendMessage", { roomId, message: newMessage });
 
       console.log("Message sent:", newMessage);
-      setMessages((prevMessages) => [...prevMessages, newMessage]); // Update the local messages array
-      setMessage(""); // Clear the input field
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
+      setMessage("");
     }
   };
 
@@ -81,18 +87,17 @@ const ChatRoom = ({ socketRef, roomId, username }) => {
         boxShadow="md"
         maxHeight="400px"
       >
-      {messages.map((msg, index) => (
-  <HStack key={`${msg.username}-${msg.text}-${index}`} spacing={3} align="start">
-    <Avatar name={msg.username || "Unknown"} size="sm" />
-    <VStack align="start" spacing={1}>
-      <Text fontSize="sm" fontWeight="bold">
-        {msg.username || "Anonymous"}
-      </Text>
-      <Text fontSize="sm">{msg.text || "nothing"}</Text>
-    </VStack>
-  </HStack>
-))}
-
+        {messages.map((msg) => (
+          <HStack key={msg.id} spacing={3} align="start">
+            <Avatar name={msg.username || "Unknown"} size="sm" />
+            <VStack align="start" spacing={1}>
+              <Text fontSize="sm" fontWeight="bold">
+                {msg.username || "Anonymous"}
+              </Text>
+              <Text fontSize="sm">{msg.text || "nothing"}</Text>
+            </VStack>
+          </HStack>
+        ))}
       </VStack>
 
       {/* Input and Send Button */}

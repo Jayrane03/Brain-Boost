@@ -5,10 +5,11 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const { Server } = require('socket.io');
 const http = require('http');
-
+const connectDB = require("../utils/db");
 // Initialize Express app and HTTP server
 const app = express();
 const server = http.createServer(app);
+const { v4: uuidv4 } = require("uuid");
 const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production'
@@ -19,30 +20,24 @@ const io = new Server(server, {
   },
 });
 
+
+
 const rooms = {}; // Tracks users in each room
 const roomMessages = {}; // Tracks message history for each room
 
-// Helper function to broadcast user list
+// Helper function to broadcast the user list
 const broadcastUsers = (roomId) => {
   if (rooms[roomId]) {
-    io.to(roomId).emit('updateUsers', rooms[roomId]);
+    io.to(roomId).emit("updateUsers", rooms[roomId]); // Send the updated user list to all users in the room
   }
 };
 
-// // Helper function to broadcast messages
-// const broadcastMessages = (socket, roomId, message) => {
-//   if (rooms[roomId]) {
-//     socket.to(roomId).emit('receiveMessage', message); // Broadcast the message to the room excluding the sender
-//     console.log(`Message sent to room ${roomId}:`, message);
-//   }
-// };
-
 // Socket.IO connection handling
-io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
+io.on("connection", (socket) => {
+  console.log("A user connected:", socket.id);
 
   // Handle a user joining a room
-  socket.on('joinRoom', ({ roomId, username }) => {
+  socket.on("joinRoom", ({ roomId, username }) => {
     if (!roomId || !username) return;
 
     // Initialize room and message storage if not already present
@@ -56,44 +51,54 @@ io.on('connection', (socket) => {
     console.log(`User ${username} joined room ${roomId}`);
 
     // Send chat history to the newly joined user
-    socket.emit('previousMessages', roomMessages[roomId]);
+    socket.emit("previousMessages", roomMessages[roomId]);
 
     // Broadcast the updated user list to the room
     broadcastUsers(roomId);
   });
 
   // Handle sending a message
-  socket.on('sendMessage', ({ roomId, message }) => {
-    if (!roomId || !message) return;
-  
+  socket.on("sendMessage", ({ roomId, message }) => {
+    if (!roomId || !message || !message.text || !message.username) {
+      console.error("Invalid message or roomId:", { roomId, message });
+      return;
+    }
+
     // Ensure the room has a message history
     if (!roomMessages[roomId]) roomMessages[roomId] = [];
-  
+
+    // Add a unique ID to the message
+    const messageWithId = { id: uuidv4(), ...message };
+
     // Add the message to the room's message history
-    roomMessages[roomId].push(message);
-    console.log("Room Messages", roomMessages);
-  
-    // Broadcast the message to all users except the sender
-    socket.to(roomId).emit('receiveMessage', message); // Send message to everyone except sender
+    roomMessages[roomId].push(messageWithId);
+
+    console.log(`Message received in room ${roomId}:`, messageWithId);
+
+    // Broadcast the message to all users in the room except the sender
+    socket.to(roomId).emit("receiveMessage", messageWithId);
   });
-  
-  // Handle disconnection
-  socket.on('disconnect', () => {
+
+  // Handle user disconnection
+  socket.on("disconnect", () => {
     for (const roomId in rooms) {
       // Remove the disconnected user from the room
       rooms[roomId] = rooms[roomId].filter((user) => user.socketId !== socket.id);
 
-      // Delete the room if it's empty
+      // If the room is empty, delete it
       if (rooms[roomId].length === 0) {
         delete rooms[roomId];
         delete roomMessages[roomId]; // Optionally delete message history for empty rooms
       } else {
-        broadcastUsers(roomId); // Broadcast updated user list
+        // Broadcast the updated user list to the room
+        broadcastUsers(roomId);
       }
     }
-    console.log('A user disconnected:', socket.id);
+
+    console.log("A user disconnected:", socket.id);
   });
 });
+
 
 // Middleware setup
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -127,4 +132,5 @@ const port = process.env.PORT || 5001;
 
 server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
+  connectDB(port);
 });

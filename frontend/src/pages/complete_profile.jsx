@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import '../Styles/complete_profile.css';
 import { Radio, RadioGroup, HStack, Alert, AlertIcon, AlertTitle, AlertDescription, Box, CloseButton } from '@chakra-ui/react';
 import BASE_URL from '../services';
-function Profile() {
+function Profile({user}) {
   const [userData, setUserData] = useState({
     firstName: '',
     lastName: '',
