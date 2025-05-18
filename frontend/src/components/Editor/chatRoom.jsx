@@ -9,42 +9,40 @@ import {
   Text,
   IconButton,
   useToast,
+  Divider,
 } from "@chakra-ui/react";
 import { AttachmentIcon } from "@chakra-ui/icons";
-import { v4 as uuidv4 } from "uuid";
-import BASE_URL from "../../services";
+import BASE_URL from "../../services"; // Make sure this is correctly set
 
-const ChatRoom = ({ socketRef, roomId, username }) => {
+const ChatRoom = ({ roomId, username }) => {
   const toast = useToast();
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
-  const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const messagesEndRef = useRef();
 
+  // Fetch existing messages
   useEffect(() => {
-    const socket = socketRef.current;
-    if (!socket || !roomId || !username) return;
-
-    socket.emit("joinRoom", { roomId, username });
-
-    socket.on("previousMessages", (chatHistory) => {
-      if (Array.isArray(chatHistory)) {
-        setMessages(chatHistory);
-      } else {
-        setMessages([]);
-        console.error("Invalid chat history received:", chatHistory);
+    const fetchMessages = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/chat/${roomId}`);
+        if (!res.ok) throw new Error("Failed to fetch messages");
+        const data = await res.json();
+        setMessages(data);
+      } catch (err) {
+        toast({
+          title: "Load Error",
+          description: err.message,
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
       }
-    });
-
-    socket.on("receiveMessage", (newMessage) => {
-      setMessages((prev) => [...prev, newMessage]);
-    });
-
-    return () => {
-      socket.off("previousMessages");
-      socket.off("receiveMessage");
     };
-  }, [roomId, username, socketRef]);
+
+    if (roomId) fetchMessages();
+  }, [roomId, toast]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -72,32 +70,36 @@ const ChatRoom = ({ socketRef, roomId, username }) => {
 
         if (!res.ok) throw new Error("File upload failed");
 
-        const uploaded = await res.json();
-        fileUrl = uploaded.fileUrl;
-        fileType = uploaded.fileType;
+        const fileData = await res.json();
+        fileUrl = fileData.fileUrl;
+        fileType = fileData.fileType;
       }
 
-      const newMessage = {
-        id: uuidv4(),
-        roomId,
-        from: [username],
-        message: messageText.trim(),
-        fileUrl,
-        fileType,
-        date: new Date(),
-      };
+      const res = await fetch(`${BASE_URL}/chat/${roomId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username,
+          text: messageText.trim(),
+          fileUrl,
+          fileType,
+        }),
+      });
 
-      socketRef.current.emit("sendMessage", { roomId, message: newMessage });
+      if (!res.ok) throw new Error("Message send failed");
 
-      setMessages((prev) => [...prev, newMessage]);
+      const newMsg = await res.json();
+      setMessages((prev) => [...prev, newMsg]);
+
       setMessageText("");
       setSelectedFile(null);
+      fileInputRef.current.value = "";
     } catch (err) {
       toast({
-        title: "Failed to send message",
+        title: "Send Failed",
         description: err.message,
         status: "error",
-        duration: 4000,
+        duration: 3000,
         isClosable: true,
       });
     }
@@ -111,7 +113,7 @@ const ChatRoom = ({ socketRef, roomId, username }) => {
         <img
           src={msg.fileUrl}
           alt="uploaded"
-          style={{ maxWidth: "200px", borderRadius: "8px" }}
+          style={{ maxWidth: "200px", borderRadius: "8px", marginTop: "8px" }}
         />
       );
     }
@@ -119,7 +121,7 @@ const ChatRoom = ({ socketRef, roomId, username }) => {
     if (msg.fileType === "application/pdf") {
       return (
         <a href={msg.fileUrl} target="_blank" rel="noreferrer">
-          <Button size="sm" colorScheme="blue" p={4}>
+          <Button size="sm" colorScheme="blue" mt={1}>
             View PDF
           </Button>
         </a>
@@ -130,7 +132,7 @@ const ChatRoom = ({ socketRef, roomId, username }) => {
   };
 
   return (
-    <Box bg="gray.50" p={4} borderRadius="lg" h="100%" maxH="100vh">
+    <Box bg="gray.100" p={4} borderRadius="lg" h="100%" maxH="100vh">
       <Text fontSize="xl" fontWeight="bold" mb={4}>
         Chat Room: {roomId}
       </Text>
@@ -144,25 +146,37 @@ const ChatRoom = ({ socketRef, roomId, username }) => {
         overflowY="auto"
         maxH="70vh"
       >
-        {Array.isArray(messages) &&
-          messages.map((msg) => (
-            <HStack key={msg._id || msg.id} align="start">
-              <Avatar name={msg.from?.[0]} size="sm" />
+        {messages.map((msg, index) => (
+          <Box
+            key={msg._id || index}
+            p={3}
+            bg="gray.50"
+            borderRadius="md"
+            boxShadow="sm"
+          >
+            <HStack align="start">
+              <Avatar name={msg.username} size="sm" />
               <VStack align="start" spacing={1}>
                 <Text fontSize="sm" fontWeight="bold">
-                  {msg.from?.[0]}
+                  {msg.username}
                 </Text>
-                {typeof msg.message === "string" && (
-                  <Text fontSize="sm">{msg.message}</Text>
-                )}
+                <Text fontSize="sm" wordBreak="break-word">
+                  {msg.text}
+                </Text>
                 {renderFile(msg)}
+                <Text fontSize="xs" color="gray.500">
+                  {new Date(msg.date).toLocaleString()}
+                </Text>
               </VStack>
             </HStack>
-          ))}
+          </Box>
+        ))}
         <div ref={messagesEndRef} />
       </VStack>
 
-      <HStack mt={4}>
+      <Divider my={4} />
+
+      <HStack>
         <Input
           placeholder="Type your message..."
           value={messageText}
@@ -172,12 +186,17 @@ const ChatRoom = ({ socketRef, roomId, username }) => {
         <input
           type="file"
           accept="image/*,application/pdf"
-          style={{ display: "none" }}
-          id="file-upload"
+          hidden
+          ref={fileInputRef}
           onChange={handleFileChange}
+          id="file-upload"
         />
         <label htmlFor="file-upload">
-          <IconButton icon={<AttachmentIcon />} as="span" />
+          <IconButton
+            icon={<AttachmentIcon />}
+            as="span"
+            aria-label="Attach file"
+          />
         </label>
         <Button colorScheme="green" onClick={sendMessage}>
           Send

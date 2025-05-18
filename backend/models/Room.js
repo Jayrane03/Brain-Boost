@@ -1,3 +1,4 @@
+// models/Room.js
 const mongoose = require("mongoose");
 
 const messageSchema = new mongoose.Schema({
@@ -5,13 +6,13 @@ const messageSchema = new mongoose.Schema({
   message: String,
   fileUrl: String,
   fileType: String,
-  timestamp: Date,
-}, { timestamps: true });
+  timestamp: { type: Date, default: Date.now },
+});
 
 const roomSchema = new mongoose.Schema({
   roomId: String,
-  users: [String],  // user emails
+  users: [String],
   messages: [messageSchema],
-}, { timestamps: true });
+});
 
 module.exports = mongoose.model("Room", roomSchema);
