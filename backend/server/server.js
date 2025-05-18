@@ -114,6 +114,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "..", "public")));
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
+
 // === Multer File Upload Setup ===
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, path.join(__dirname, "..", "uploads")),
