@@ -9,7 +9,6 @@ const { Server } = require("socket.io");
 const { v4: uuidv4 } = require("uuid");
 
 const connectDB = require("../utils/db");
-// const UserModel = require("../models/auth-model");
 const RoomModel = require("../models/Room.js");
 
 const app = express();
@@ -44,14 +43,7 @@ io.on("connection", (socket) => {
     }
 
     socket.join(roomId);
-
-    const clientsInRoom = await io.in(roomId).fetchSockets();
-    const users = clientsInRoom.map((s) => ({
-      username: s.handshake.query.username || "Guest",
-      socketId: s.id,
-    }));
-
-    io.to(roomId).emit("updateUsers", users);
+    console.log(`${username} joined room ${roomId}`);
   });
 
   socket.on("sendMessage", async ({ roomId, message }) => {
@@ -70,8 +62,8 @@ io.on("connection", (socket) => {
         { $push: { messages: newMsg } },
         { new: true, upsert: true }
       );
-io.to(roomId).emit("clearMessages");
 
+      // ✅ Broadcast to all users in the room (including sender)
       io.to(roomId).emit("receiveMessage", {
         username,
         text,
@@ -93,7 +85,6 @@ io.to(roomId).emit("clearMessages");
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// CORS setup
 const allowedOrigins =
   process.env.NODE_ENV === "production"
     ? ["https://brain-boost-1.onrender.com"]
@@ -102,20 +93,17 @@ const allowedOrigins =
 app.use(
   cors({
     origin: allowedOrigins,
-    methods: ["GET", "POST", "PUT","DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-app.options("*", cors()); // ✅ Allow preflight across routes
-
+app.options("*", cors());
 
 // Static uploads
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 const storage = multer.diskStorage({
-  destination: (req, file, cb) =>
-    cb(null, path.join(__dirname, "..", "uploads")),
-  filename: (req, file, cb) =>
-    cb(null, Date.now() + "-" + file.originalname),
+  destination: (req, file, cb) => cb(null, path.join(__dirname, "..", "uploads")),
+  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
 });
 const upload = multer({ storage });
 
@@ -126,12 +114,11 @@ app.post("/file_upload", upload.single("file"), (req, res) => {
   res.status(200).json({ fileUrl, fileType: req.file.mimetype });
 });
 
-// --- Chat REST: Only GET route retained (no POST to avoid duplicate sending) ---
+// Chat history fetch
 app.get("/chat/:roomId", async (req, res) => {
   try {
     const { roomId } = req.params;
     const room = await RoomModel.findOne({ roomId });
-
     if (!room) return res.status(404).json({ error: "Room not found" });
 
     const formatted = room.messages.map((msg) => ({
@@ -149,17 +136,7 @@ app.get("/chat/:roomId", async (req, res) => {
   }
 });
 
-// Other Routes
-app.use(require("../routes/profile-routes"));
-app.use(require("../routes/auth-routes"));
-
-// Serve frontend in production
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "..", "public")));
-  app.get("*", (req, res) =>
-    res.sendFile(path.resolve(__dirname, "..", "public", "index.html"))
-  );
-}
+// Chat clear route
 app.delete("/chat/:roomId", async (req, res) => {
   try {
     const { roomId } = req.params;
@@ -172,7 +149,6 @@ app.delete("/chat/:roomId", async (req, res) => {
 
     if (!room) return res.status(404).json({ error: "Room not found" });
 
-    // Broadcast to clients
     io.to(roomId).emit("clearMessages");
 
     res.status(200).json({ message: "Chat cleared successfully" });
@@ -182,10 +158,19 @@ app.delete("/chat/:roomId", async (req, res) => {
   }
 });
 
-// --- Connect DB & Start Server ---
+// Other routes
+app.use(require("../routes/profile-routes"));
+app.use(require("../routes/auth-routes"));
+
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "..", "public")));
+  app.get("*", (req, res) =>
+    res.sendFile(path.resolve(__dirname, "..", "public", "index.html"))
+  );
+}
+
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   connectDB();
 });
-//   ))}

@@ -23,7 +23,7 @@ const ChatRoom = ({ socketRef, roomId, username, email }) => {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef();
 
-  // 🔄 Fetch chat history via REST as fallback
+  // Fetch chat history
   useEffect(() => {
     const fetchHistory = async () => {
       try {
@@ -45,33 +45,28 @@ const ChatRoom = ({ socketRef, roomId, username, email }) => {
     if (roomId) fetchHistory();
   }, [roomId]);
 
-  // 📡 Join room & handle Socket.IO messages
+  // Socket join and listeners
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket || !roomId || !username || !email) return;
 
     socket.emit("joinRoom", { roomId, username, email });
 
-    socket.on("previousMessages", (chatHistory) => {
-      if (Array.isArray(chatHistory)) {
-        setMessages(chatHistory);
-      } else {
-        console.error("Invalid chat history:", chatHistory);
-        setMessages([]);
-      }
-    });
-
     socket.on("receiveMessage", (newMessage) => {
       setMessages((prev) => [...prev, newMessage]);
     });
 
+    socket.on("clearMessages", () => {
+      setMessages([]);
+    });
+
     return () => {
-      socket.off("previousMessages");
       socket.off("receiveMessage");
+      socket.off("clearMessages");
     };
   }, [roomId, username, email, socketRef]);
 
-  // ⬇️ Scroll to latest message
+  // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -112,11 +107,12 @@ const ChatRoom = ({ socketRef, roomId, username, email }) => {
         date: new Date().toISOString(),
       };
 
+      // Only emit — do not locally update messages, server will emit back
       socketRef.current.emit("sendMessage", { roomId, message: newMessage });
 
       setMessageText("");
       setSelectedFile(null);
-      fileInputRef.current.value = "";
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
       toast({
         title: "Failed to send message",
@@ -151,7 +147,13 @@ const ChatRoom = ({ socketRef, roomId, username, email }) => {
       );
     }
 
-    return null;
+    return (
+      <a href={msg.fileUrl} download>
+        <Button size="sm" colorScheme="gray" mt={1}>
+          Download File
+        </Button>
+      </a>
+    );
   };
 
   return (
@@ -169,34 +171,33 @@ const ChatRoom = ({ socketRef, roomId, username, email }) => {
         overflowY="auto"
         maxH="70vh"
       >
-        {Array.isArray(messages) &&
-          messages.map((msg, index) => (
-            <Box
-              key={msg._id || msg.id || index}
-              p={3}
-              bg="gray.50"
-              borderRadius="md"
-              boxShadow="sm"
-            >
-              <HStack align="start">
-                <Avatar name={msg.username} size="sm" />
-                <VStack align="start" spacing={0}>
-                  <Text fontSize="sm" fontWeight="bold">
-                    {msg.username}
+        {messages.map((msg, index) => (
+          <Box
+            key={msg._id || msg.id || index}
+            p={3}
+            bg="gray.50"
+            borderRadius="md"
+            boxShadow="sm"
+          >
+            <HStack align="start">
+              <Avatar name={msg.username} size="sm" />
+              <VStack align="start" spacing={0}>
+                <Text fontSize="sm" fontWeight="bold">
+                  {msg.username}
+                </Text>
+                {msg.text && (
+                  <Text fontSize="sm">{msg.text}</Text>
+                )}
+                {renderFile(msg)}
+                {msg.date && (
+                  <Text fontSize="xs" color="gray.500" mt={1}>
+                    {new Date(msg.date).toLocaleString()}
                   </Text>
-                  {typeof msg.text === "string" && (
-                    <Text fontSize="sm">{msg.text}</Text>
-                  )}
-                  {renderFile(msg)}
-                  {msg.date && (
-                    <Text fontSize="xs" color="gray.500" mt={1}>
-                      {new Date(msg.date).toLocaleString()}
-                    </Text>
-                  )}
-                </VStack>
-              </HStack>
-            </Box>
-          ))}
+                )}
+              </VStack>
+            </HStack>
+          </Box>
+        ))}
         <div ref={messagesEndRef} />
       </VStack>
 
@@ -218,7 +219,12 @@ const ChatRoom = ({ socketRef, roomId, username, email }) => {
           onChange={handleFileChange}
         />
         <label htmlFor="file-upload">
-          <IconButton icon={<AttachmentIcon />} as="span" />
+          <IconButton
+            icon={<AttachmentIcon />}
+            as="span"
+            variant="outline"
+            colorScheme={selectedFile ? "green" : "gray"}
+          />
         </label>
         <Button colorScheme="green" onClick={sendMessage}>
           Send
