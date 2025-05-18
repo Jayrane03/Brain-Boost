@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import  { useEffect, useRef, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import "../../Styles/editor_page.css";
 import { initSocket } from "../../socket";
@@ -50,7 +50,8 @@ const EditorPage = () => {
         });
 
         // Emit join event with roomId and username
-        socketRef.current.emit("joinRoom", { roomId, username });
+  socketRef.current.emit("joinRoom", { roomId, username });
+
 
         // Listen for updates when a user joins the room
         socketRef.current.on("updateUsers", (updatedUsers) => {

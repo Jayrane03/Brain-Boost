@@ -1,113 +1,184 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  HStack,
+  Box,
   VStack,
-  Text,
-  Avatar,
+  HStack,
   Input,
   Button,
-  Box,
+  Avatar,
+  Text,
+  IconButton,
+  useToast,
 } from "@chakra-ui/react";
+import { AttachmentIcon } from "@chakra-ui/icons";
 import { v4 as uuidv4 } from "uuid";
+import BASE_URL from "../../services";
 
 const ChatRoom = ({ socketRef, roomId, username }) => {
-  const [messages, setMessages] = useState([]); // Messages array
-  const [message, setMessage] = useState(""); // Current message input
+  const toast = useToast();
+  const [messages, setMessages] = useState([]);
+  const [messageText, setMessageText] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const messagesEndRef = useRef(null);
 
-  // Fetch chat history and listen for new messages
   useEffect(() => {
-    if (!socketRef.current) return; // Ensure socketRef is defined
+    const socket = socketRef.current;
+    if (!socket || !roomId || !username) return;
 
-    // Wait for the socket connection to establish
-    socketRef.current.on("connect", () => {
-      console.log("Socket connected");
+    socket.emit("joinRoom", { roomId, username });
 
-      // Join the room on component mount
-      socketRef.current.emit("joinRoom", { roomId, username });
-
-      // Listen for previous messages (chat history)
-      socketRef.current.on("previousMessages", (chatHistory) => {
-        console.log("Chat history received:", chatHistory);
-        setMessages(chatHistory || []);
-      });
-
-      // Listen for new messages
-      socketRef.current.on("receiveMessage", (newMessage) => {
-        console.log("Message received:", newMessage);
-        setMessages((prevMessages) => [...prevMessages, newMessage]);
-      });
+    socket.on("previousMessages", (chatHistory) => {
+      if (Array.isArray(chatHistory)) {
+        setMessages(chatHistory);
+      } else {
+        setMessages([]);
+        console.error("Invalid chat history received:", chatHistory);
+      }
     });
 
-    // Cleanup listeners on unmount
+    socket.on("receiveMessage", (newMessage) => {
+      setMessages((prev) => [...prev, newMessage]);
+    });
+
     return () => {
-      if (socketRef.current) {
-        socketRef.current.off("connect");
-        socketRef.current.off("previousMessages");
-        socketRef.current.off("receiveMessage");
-      }
+      socket.off("previousMessages");
+      socket.off("receiveMessage");
     };
-  }, [socketRef, roomId, username]);
+  }, [roomId, username, socketRef]);
 
-  // Handle sending a message
-  const sendMessage = () => {
-    if (message.trim()) {
-      const newMessage = { id: uuidv4(), username, text: message }; // Add a unique ID
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-      // Emit the message to the server
+  const handleFileChange = (e) => {
+    setSelectedFile(e.target.files[0]);
+  };
+
+  const sendMessage = async () => {
+    if (!messageText.trim() && !selectedFile) return;
+
+    let fileUrl = null;
+    let fileType = null;
+
+    try {
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+
+        const res = await fetch(`${BASE_URL}/file_upload`, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) throw new Error("File upload failed");
+
+        const uploaded = await res.json();
+        fileUrl = uploaded.fileUrl;
+        fileType = uploaded.fileType;
+      }
+
+      const newMessage = {
+        id: uuidv4(),
+        roomId,
+        from: [username],
+        message: messageText.trim(),
+        fileUrl,
+        fileType,
+        date: new Date(),
+      };
+
       socketRef.current.emit("sendMessage", { roomId, message: newMessage });
 
-      console.log("Message sent:", newMessage);
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
-      setMessage("");
+      setMessages((prev) => [...prev, newMessage]);
+      setMessageText("");
+      setSelectedFile(null);
+    } catch (err) {
+      toast({
+        title: "Failed to send message",
+        description: err.message,
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
     }
   };
 
+  const renderFile = (msg) => {
+    if (!msg.fileUrl) return null;
+
+    if (msg.fileType?.startsWith("image/")) {
+      return (
+        <img
+          src={msg.fileUrl}
+          alt="uploaded"
+          style={{ maxWidth: "200px", borderRadius: "8px" }}
+        />
+      );
+    }
+
+    if (msg.fileType === "application/pdf") {
+      return (
+        <a href={msg.fileUrl} target="_blank" rel="noreferrer">
+          <Button size="sm" colorScheme="blue" p={4}>
+            View PDF
+          </Button>
+        </a>
+      );
+    }
+
+    return null;
+  };
+
   return (
-    <Box
-      className="chat-room"
-      bg="gray.100"
-      p={4}
-      borderRadius="md"
-      height="600px"
-      overflowY="auto"
-    >
+    <Box bg="gray.50" p={4} borderRadius="lg" h="100%" maxH="100vh">
       <Text fontSize="xl" fontWeight="bold" mb={4}>
-        Chat Room
+        Chat Room: {roomId}
       </Text>
 
-      {/* Chat Messages */}
       <VStack
         spacing={3}
         align="stretch"
-        overflowY="auto"
-        height="80%"
         bg="white"
         p={4}
         borderRadius="md"
-        boxShadow="md"
-        maxHeight="400px"
+        overflowY="auto"
+        maxH="70vh"
       >
-        {messages.map((msg) => (
-          <HStack key={msg.id} spacing={3} align="start">
-            <Avatar name={msg.username || "Unknown"} size="sm" />
-            <VStack align="start" spacing={1}>
-              <Text fontSize="sm" fontWeight="bold">
-                {msg.username || "Anonymous"}
-              </Text>
-              <Text fontSize="sm">{msg.text || "nothing"}</Text>
-            </VStack>
-          </HStack>
-        ))}
+        {Array.isArray(messages) &&
+          messages.map((msg) => (
+            <HStack key={msg._id || msg.id} align="start">
+              <Avatar name={msg.from?.[0]} size="sm" />
+              <VStack align="start" spacing={1}>
+                <Text fontSize="sm" fontWeight="bold">
+                  {msg.from?.[0]}
+                </Text>
+                {typeof msg.message === "string" && (
+                  <Text fontSize="sm">{msg.message}</Text>
+                )}
+                {renderFile(msg)}
+              </VStack>
+            </HStack>
+          ))}
+        <div ref={messagesEndRef} />
       </VStack>
 
-      {/* Input and Send Button */}
       <HStack mt={4}>
         <Input
           placeholder="Type your message..."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()} // Send on Enter key
+          value={messageText}
+          onChange={(e) => setMessageText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
+        <input
+          type="file"
+          accept="image/*,application/pdf"
+          style={{ display: "none" }}
+          id="file-upload"
+          onChange={handleFileChange}
+        />
+        <label htmlFor="file-upload">
+          <IconButton icon={<AttachmentIcon />} as="span" />
+        </label>
         <Button colorScheme="green" onClick={sendMessage}>
           Send
         </Button>

@@ -1,4 +1,4 @@
-import React, { useEffect ,useState } from 'react';
+import  { useEffect ,useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Updated import
 import Home from "./components/home";
 import ScrollToHash from './components/ScrooltoHash';
@@ -7,6 +7,7 @@ import LoginPage from "./pages/login";
 import RegisterForm from './pages/register';
 import Profile from './pages/complete_profile';
 import "../src/Styles/index.css";
+import ChatRoom from './components/Editor/chatRoom';
 // import CodeRoom from './components/Editor/CodeRoom.jsx';
 import CourseDetail from './components/Course/courseDeatils';
 import EditorPage from "./components/Editor/EditorPage.jsx";
@@ -49,6 +50,8 @@ function App() {
         <Route path="/register" element={<RegisterForm />} />
         <Route path="/course/:id" element={<CourseDetail/>}  />
         <Route path="/editor_page/:roomId" element={<EditorPage/>}  />
+        <Route path="/chat_room/:roomId" element={<ChatRoom />} />
+
         <Route path="/room" element={<CodeRoom/>}  />
       </Routes>
     

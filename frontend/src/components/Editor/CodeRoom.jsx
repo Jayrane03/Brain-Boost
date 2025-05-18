@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "../../Styles/pages.css";
 import "../../Styles/room.css";
 import { Navbar } from "react-bootstrap";
@@ -80,22 +80,31 @@ const CodeRoom = () => {
   };
 
   const handleJoin = (e) => {
-    e.preventDefault();
-    if (!formData.roomId) {
-      setError("Room ID is required.");
-      return;
-    }
+  e.preventDefault();
 
-    setLoading(true);
-    setTimeout(() => {
-      setSuccess(`You have joined the room with ID: ${formData.roomId}`);
-      setError("");
-      setLoading(false);
-      navigate(`/editor_page/${formData.roomId}`, {
-        state: { username, roomId: formData.roomId },
-      });
-    }, 1000);
-  };
+  if (!formData.roomId) {
+    setError("Room ID is required.");
+    return;
+  }
+
+  setLoading(true);
+
+  // Simulate join action
+  setTimeout(() => {
+    setSuccess(`You have joined the room with ID: ${formData.roomId}`);
+    setError("");
+    setLoading(false);
+
+    navigate(`/editor_page/${formData.roomId}`, {
+      state: {
+        username,
+        roomId: formData.roomId,
+        senderEmail: userData.email,
+        recipientEmail: "admin@brainboost.com", // Optional: Make this dynamic
+      },
+    });
+  }, 1000);
+};
 
   return (
     <div className="code_room w-100 h-100">
