@@ -9,25 +9,43 @@ const { Server } = require("socket.io");
 const { v4: uuidv4 } = require("uuid");
 
 const connectDB = require("../utils/db");
-// const UserModel = require("../models/auth-model");
 const RoomModel = require("../models/Room.js");
 
 const app = express();
 const server = http.createServer(app);
 
-// Socket.IO setup
-const io = new Server(server, {
-  cors: {
-    origin:
-      process.env.NODE_ENV === "production"
-        ? ["https://brain-boost-1.onrender.com"]
-        : ["http://localhost:5173"],
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  },
+// === Setup allowed origins for CORS ===
+const allowedOrigins = [
+  "https://brain-boost-1.onrender.com",
+  "http://localhost:5173"
+];
+
+// === CORS Middleware ===
+app.use(cors({
+  origin: allowedOrigins,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+}));
+
+app.options("*", cors());
+
+// === Force correct MIME for CSS ===
+app.get("*.css", (req, res, next) => {
+  res.type("text/css");
+  next();
 });
 
-// --- Socket.IO Logic ---
+// === Socket.IO Configuration ===
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }
+});
+
+// === Socket.IO Events ===
 io.on("connection", (socket) => {
   console.log("✅ User connected:", socket.id);
 
@@ -70,7 +88,6 @@ io.on("connection", (socket) => {
         { $push: { messages: newMsg } },
         { new: true, upsert: true }
       );
-io.to(roomId).emit("clearMessages");
 
       io.to(roomId).emit("receiveMessage", {
         username,
@@ -89,35 +106,18 @@ io.to(roomId).emit("clearMessages");
   });
 });
 
-// --- Middleware ---
+// === Body Parsing Middleware ===
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// CORS setup
-const allowedOrigins = [
-  "https://brain-boost-1.onrender.com", // your frontend domain
-  "http://localhost:5173", // local dev
-];
-
-app.use(
-  cors({
-    origin: allowedOrigins,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
-
-app.options("*", cors()); // ✅ Allow preflight across routes
-
-
-// Static uploads
+// === Serve Static Files ===
+app.use(express.static(path.join(__dirname, "..", "public")));
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
+
+// === Multer File Upload Setup ===
 const storage = multer.diskStorage({
-  destination: (req, file, cb) =>
-    cb(null, path.join(__dirname, "..", "uploads")),
-  filename: (req, file, cb) =>
-    cb(null, Date.now() + "-" + file.originalname),
+  destination: (req, file, cb) => cb(null, path.join(__dirname, "..", "uploads")),
+  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
 });
 const upload = multer({ storage });
 
@@ -128,7 +128,7 @@ app.post("/file_upload", upload.single("file"), (req, res) => {
   res.status(200).json({ fileUrl, fileType: req.file.mimetype });
 });
 
-// --- Chat REST: Only GET route retained (no POST to avoid duplicate sending) ---
+// === Chat REST API ===
 app.get("/chat/:roomId", async (req, res) => {
   try {
     const { roomId } = req.params;
@@ -151,21 +151,9 @@ app.get("/chat/:roomId", async (req, res) => {
   }
 });
 
-// Other Routes
-app.use(require("../routes/profile-routes"));
-app.use(require("../routes/auth-routes"));
-
-// Serve frontend in production
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "..", "public")));
-  app.get("*", (req, res) =>
-    res.sendFile(path.resolve(__dirname, "..", "public", "index.html"))
-  );
-}
 app.delete("/chat/:roomId", async (req, res) => {
   try {
     const { roomId } = req.params;
-
     const room = await RoomModel.findOneAndUpdate(
       { roomId },
       { $set: { messages: [] } },
@@ -174,9 +162,7 @@ app.delete("/chat/:roomId", async (req, res) => {
 
     if (!room) return res.status(404).json({ error: "Room not found" });
 
-    // Broadcast to clients
     io.to(roomId).emit("clearMessages");
-
     res.status(200).json({ message: "Chat cleared successfully" });
   } catch (err) {
     console.error("Error clearing chat:", err.message);
@@ -184,10 +170,21 @@ app.delete("/chat/:roomId", async (req, res) => {
   }
 });
 
-// --- Connect DB & Start Server ---
+// === Add Auth and Profile Routes ===
+app.use(require("../routes/profile-routes"));
+app.use(require("../routes/auth-routes"));
+
+// === Serve React Frontend in Production ===
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "..", "public")));
+  app.get("*", (req, res) =>
+    res.sendFile(path.resolve(__dirname, "..", "public", "index.html"))
+  );
+}
+
+// === Start Server & Connect to DB ===
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  connectDB();
+  connectDB(); // This should be defined in ../utils/db.js
 });
-//   ))}
