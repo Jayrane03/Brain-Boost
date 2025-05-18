@@ -94,18 +94,20 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 // CORS setup
-const allowedOrigins =
-  process.env.NODE_ENV === "production"
-    ? ["https://brain-boost-1.onrender.com"]
-    : ["http://localhost:5173"];
+const allowedOrigins = [
+  "https://brain-boost-1.onrender.com", // your frontend domain
+  "http://localhost:5173", // local dev
+];
 
 app.use(
   cors({
     origin: allowedOrigins,
-    methods: ["GET", "POST", "PUT","DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
+
 app.options("*", cors()); // ✅ Allow preflight across routes
 
 
