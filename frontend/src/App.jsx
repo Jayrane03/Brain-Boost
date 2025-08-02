@@ -11,7 +11,7 @@ import ChatRoom from './components/Editor/chatRoom';
 // import CodeRoom from './components/Editor/CodeRoom.jsx';
 import CourseDetail from './components/Course/courseDeatils';
 import EditorPage from "./components/Editor/EditorPage.jsx";
-import CodeRoom from './components/Editor/codeRoom.jsx';
+import CodeRoom from './components/Editor/CodeRoom.jsx';
 function App() {
   const [user, setUser] = useState(null);
   

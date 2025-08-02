@@ -6,14 +6,18 @@ const path = require("path");
 const http = require("http");
 const multer = require("multer");
 const { Server } = require("socket.io");
-const { v4: uuidv4 } = require("uuid");
-
+// const { v4: uuidv4 } = require("uuid");
+const authRoutes = require("../routes/auth-routes.js");
+const profileRoutes = require("../routes/profile-routes.js");
 const connectDB = require("../utils/db");
 const RoomModel = require("../models/Room.js");
 
 const app = express();
 const server = http.createServer(app);
 
+app.use(express.json());
+app.use(authRoutes)
+app.use(profileRoutes)
 // Socket.IO setup
 const io = new Server(server, {
   cors: {
@@ -158,9 +162,7 @@ app.delete("/chat/:roomId", async (req, res) => {
   }
 });
 
-// Other routes
-app.use(require("../routes/profile-routes"));
-app.use(require("../routes/auth-routes"));
+
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "..", "public")));
@@ -168,9 +170,21 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(path.resolve(__dirname, "..", "public", "index.html"))
   );
 }
-
-const PORT = process.env.PORT || 5001;
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  connectDB();
+const PORT = process.env.PORT || 5000;
+connectDB().then(() => {
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
+}).catch((err) => {
+  console.error("❌ Failed to connect to MongoDB:", err.message);
 });
+
+app.get("/", (req, res) => {
+  res.send("✅ API is working!");
+});
+
+// const PORT = process.env.PORT || 5001;
+// server.listen(PORT, () => {
+//   console.log(`🚀 Server running on port ${PORT}`);
+//   connectDB();
+// });
