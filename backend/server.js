@@ -31,7 +31,7 @@ app.use(
   })
 );
 
-app.options("*", cors());
+// app.options("*", cors());
 
 // --- Middleware: Body Parsing ---
 app.use(express.json());
