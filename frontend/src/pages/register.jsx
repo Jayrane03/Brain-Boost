@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import  { useState } from 'react';
 import '../Styles/pages.css';
 import signUpImg from "/Images/reg.png";
 import BASE_URL from '../services';

@@ -1,116 +1,57 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const bodyParser = require("body-parser");
 const path = require("path");
 const http = require("http");
 const multer = require("multer");
 const { Server } = require("socket.io");
-// const { v4: uuidv4 } = require("uuid");
+
 const authRoutes = require("../routes/auth-routes.js");
 const profileRoutes = require("../routes/profile-routes.js");
 const connectDB = require("../utils/db");
 const RoomModel = require("../models/Room.js");
 
+// ----- Express & Server Setup -----
 const app = express();
 const server = http.createServer(app);
 
-app.use(express.json());
-app.use(authRoutes)
-app.use(profileRoutes)
-// Socket.IO setup
-const io = new Server(server, {
-  cors: {
-    origin:
-      process.env.NODE_ENV === "production"
-        ? ["https://brain-boost-1.onrender.com"]
-        : ["http://localhost:5173"],
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  },
-});
-
-// --- Socket.IO Logic ---
-io.on("connection", (socket) => {
-  console.log("✅ User connected:", socket.id);
-
-  socket.on("joinRoom", async ({ roomId, username, email }) => {
-    let room = await RoomModel.findOne({ roomId });
-
-    if (room) {
-      if (email && !room.users.includes(email)) {
-        room.users.push(email);
-        await room.save();
-      }
-    } else {
-      await RoomModel.create({ roomId, users: email ? [email] : [], messages: [] });
-    }
-
-    socket.join(roomId);
-    console.log(`${username} joined room ${roomId}`);
-  });
-
-  socket.on("sendMessage", async ({ roomId, message }) => {
-    try {
-      const { username, text, fileUrl, fileType, date } = message;
-      const newMsg = {
-        sender: username,
-        message: text,
-        fileUrl: fileUrl || null,
-        fileType: fileType || null,
-        timestamp: date || new Date(),
-      };
-
-      await RoomModel.findOneAndUpdate(
-        { roomId },
-        { $push: { messages: newMsg } },
-        { new: true, upsert: true }
-      );
-
-      // ✅ Broadcast to all users in the room (including sender)
-      io.to(roomId).emit("receiveMessage", {
-        username,
-        text,
-        fileUrl,
-        fileType,
-        date: newMsg.timestamp,
-      });
-    } catch (err) {
-      console.error("❌ Error handling message:", err.message);
-    }
-  });
-
-  socket.on("disconnect", () => {
-    console.log("❌ User disconnected:", socket.id);
-  });
-});
-
-// --- Middleware ---
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-
+// ---- CORS ORIGINS ----
 const allowedOrigins =
   process.env.NODE_ENV === "production"
-    ? ["https://brain-boost-1.onrender.com"]
-    : ["http://localhost:5173"];
+    ? "https://brain-boost-1.onrender.com"
+    : "http://localhost:5173";
 
+// --- Middleware: CORS should come before routes ---
 app.use(
   cors({
     origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
+
 app.options("*", cors());
 
-// Static uploads
+// --- Middleware: Body Parsing ---
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+// --- API Routes ---
+app.use(authRoutes);
+app.use(profileRoutes);
+
+// --- Static uploads route (MUST exist physically) ---
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
+
+// --- Multer for file upload ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, path.join(__dirname, "..", "uploads")),
   filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
 });
 const upload = multer({ storage });
 
+// --- File upload endpoint ---
 app.post("/file_upload", upload.single("file"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
@@ -118,7 +59,7 @@ app.post("/file_upload", upload.single("file"), (req, res) => {
   res.status(200).json({ fileUrl, fileType: req.file.mimetype });
 });
 
-// Chat history fetch
+// --- Chat message history endpoint ---
 app.get("/chat/:roomId", async (req, res) => {
   try {
     const { roomId } = req.params;
@@ -140,11 +81,10 @@ app.get("/chat/:roomId", async (req, res) => {
   }
 });
 
-// Chat clear route
+// --- Clear chat route ---
 app.delete("/chat/:roomId", async (req, res) => {
   try {
     const { roomId } = req.params;
-
     const room = await RoomModel.findOneAndUpdate(
       { roomId },
       { $set: { messages: [] } },
@@ -152,7 +92,6 @@ app.delete("/chat/:roomId", async (req, res) => {
     );
 
     if (!room) return res.status(404).json({ error: "Room not found" });
-
     io.to(roomId).emit("clearMessages");
 
     res.status(200).json({ message: "Chat cleared successfully" });
@@ -162,29 +101,89 @@ app.delete("/chat/:roomId", async (req, res) => {
   }
 });
 
+// --- SocketIO Setup (AFTER app and CORS) ---
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  },
+});
 
+// --- SocketIO Logic ---
+io.on("connection", (socket) => {
+  console.log("✅ User connected:", socket.id);
 
+  socket.on("joinRoom", async ({ roomId, username, email }) => {
+    let room = await RoomModel.findOne({ roomId });
+    if (room) {
+      if (email && !room.users.includes(email)) {
+        room.users.push(email);
+        await room.save();
+      }
+    } else {
+      await RoomModel.create({ roomId, users: email ? [email] : [], messages: [] });
+    }
+    socket.join(roomId);
+    console.log(`${username} joined room ${roomId}`);
+  });
+
+  socket.on("sendMessage", async ({ roomId, message }) => {
+    try {
+      const { username, text, fileUrl, fileType, date } = message;
+      const newMsg = {
+        sender: username,
+        message: text,
+        fileUrl: fileUrl || null,
+        fileType: fileType || null,
+        timestamp: date || new Date(),
+      };
+
+      await RoomModel.findOneAndUpdate(
+        { roomId },
+        { $push: { messages: newMsg } },
+        { new: true, upsert: true }
+      );
+
+      io.to(roomId).emit("receiveMessage", {
+        username,
+        text,
+        fileUrl,
+        fileType,
+        date: newMsg.timestamp,
+      });
+    } catch (err) {
+      console.error("❌ Error handling message:", err.message);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("❌ User disconnected:", socket.id);
+  });
+});
+
+// --- Serve FE build in production ---
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "..", "public")));
   app.get("*", (req, res) =>
     res.sendFile(path.resolve(__dirname, "..", "public", "index.html"))
   );
 }
-const PORT = process.env.PORT || 5000;
-connectDB().then(() => {
-  server.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-  });
-}).catch((err) => {
-  console.error("❌ Failed to connect to MongoDB:", err.message);
-});
 
+// --- Health check route ---
 app.get("/", (req, res) => {
   res.send("✅ API is working!");
 });
 
-// const PORT = process.env.PORT || 5001;
-// server.listen(PORT, () => {
-//   console.log(`🚀 Server running on port ${PORT}`);
-//   connectDB();
-// });
+// --- DB and Server start ---
+const PORT = process.env.PORT || 5000;
+connectDB()
+  .then(() => {
+    server.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("❌ Failed to connect to MongoDB:", err.message);
+  });
