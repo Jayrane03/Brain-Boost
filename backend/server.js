@@ -6,10 +6,10 @@ const http = require("http");
 const multer = require("multer");
 const { Server } = require("socket.io");
 
-const authRoutes = require("../routes/auth-routes.js");
-const profileRoutes = require("../routes/profile-routes.js");
-const connectDB = require("../utils/db");
-const RoomModel = require("../models/Room.js");
+const authRoutes = require("./routes/auth-routes.js");
+const profileRoutes = require("./routes/profile-routes.js");
+const connectDB = require("./utils/db.js");
+const RoomModel = require("./models/Room.js");
 
 // ----- Express & Server Setup -----
 const app = express();
