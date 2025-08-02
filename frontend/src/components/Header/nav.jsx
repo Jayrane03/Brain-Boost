@@ -17,7 +17,7 @@ import {
   useDisclosure,
 } from "@chakra-ui/react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "boxicons/css/boxicons.min.css";
+
 import "../../Styles/nav.css";
 import BASE_URL from "../../services";
 function CustomNav() {

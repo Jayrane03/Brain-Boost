@@ -43,7 +43,7 @@ app.use(profileRoutes);
 
 // --- Static uploads route (MUST exist physically) ---
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
-
+app.use(express.static(path.join(__dirname, 'dist')));
 // --- Multer for file upload ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, path.join(__dirname, "..", "uploads")),
