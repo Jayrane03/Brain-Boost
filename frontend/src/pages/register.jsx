@@ -1,4 +1,5 @@
-import  { useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
 import '../Styles/pages.css';
 import signUpImg from "/Images/reg.png";
 import BASE_URL from '../services';
@@ -10,6 +11,7 @@ import {
   Box,
   CloseButton
 } from '@chakra-ui/react';
+
 const RegisterForm = () => {
   const [formData, setFormData] = useState({
     firstName: '',
@@ -19,7 +21,9 @@ const RegisterForm = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
- const [success, setSuccess] = useState('');
+  const [success, setSuccess] = useState('');
+  const navigate = useNavigate(); // 2. Initialize useNavigate
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -29,9 +33,10 @@ const RegisterForm = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
 
     try {
-      const response = await fetch(`${BASE_URL}/api/register`, { // Ensure this path is correct
+      const response = await fetch(`${BASE_URL}/api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -44,24 +49,30 @@ const RegisterForm = () => {
       if (response.ok) {
         // Save the token to localStorage
         localStorage.setItem('authToken', data.token);
-        setSuccess("Registration Successful");
-        window.location.href = '/profile'; // Redirect to login page after successful registration
+        setSuccess("Registration Successful! Redirecting...");
+
+        // 3. Use setTimeout for a better user experience
+        setTimeout(() => {
+          navigate('/profile'); // Redirect after 2 seconds
+        }, 2000);
+
       } else {
-        setError(data.message || 'Registration failed');
+        setError(data.message || 'Registration failed. Please try again.');
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error:', error);
-      setError('An error occurred. Please try again later.');
-    } finally {
+      setError('An error occurred. Please check your connection and try again.');
       setLoading(false);
     }
+    // No finally block needed here, as loading is handled in success/error paths
   };
 
   return (
     <div className="register">
       <div className="register-form-container">
         <div className="image">
-          <img  className="formImg"src={signUpImg} alt="Background" />
+          <img className="formImg" src={signUpImg} alt="Background" />
         </div>
         <div className="form-container">
           <h2>Register</h2>
@@ -79,10 +90,10 @@ const RegisterForm = () => {
             <Alert status="success" mb={4}>
               <AlertIcon />
               <Box flex="1">
-                <AlertTitle>Welcome, {userData.firstName} {userData.lastName}!</AlertTitle>
+                {/* 4. Correctly use formData to display the name */}
+                <AlertTitle>Welcome, {formData.firstName}!</AlertTitle>
                 <AlertDescription>{success}</AlertDescription>
               </Box>
-              <CloseButton position="absolute" right="8px" top="8px" onClick={() => setSuccess('')} />
             </Alert>
           )}
           <form onSubmit={registerUser}>
@@ -133,7 +144,7 @@ const RegisterForm = () => {
             <button type="submit" disabled={loading}>
               {loading ? 'Registering...' : 'Register'}
             </button>
-            <a href="/">Already have an account</a> {/* Correct link to login page */}
+            <a href="/">Already have an account</a>
           </form>
         </div>
       </div>
