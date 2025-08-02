@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "start": "nodemon server.js",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
@@ -19,7 +20,6 @@
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@vitejs/plugin-react-swc": "^3.7.0",
     "bootstrap": "^5.3.3",
-    "boxicons": "^2.1.4",
     "codemirror": "^6.0.1",
     "dotenv": "^16.4.5",
     "framer-motion": "^11.18.2",
